@@ -6,7 +6,7 @@ const qrcode = require("qrcode-terminal");
 const app = express();
 app.use(bodyParser.json());
 const port = process.env.PORT || 3000; // Usa a porta do Railway ou 3000;
-app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+app.listen(port, () => console.log(`Servidor rodando na porta ${port}`));
 
 
 async function startWhatsApp() {
