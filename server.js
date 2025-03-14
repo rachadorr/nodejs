@@ -64,8 +64,6 @@ async function startWhatsApp() {
     }
 }
 
-startWhatsApp();
+//startWhatsApp();
 
-app.listen(port, () => {
-    console.log(`📡 Servidor rodando em http://localhost:${port}`);
 });
