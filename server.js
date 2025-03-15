@@ -2,6 +2,8 @@ const { default: makeWASocket, useMultiFileAuthState } = require("@whiskeysocket
 const express = require("express");
 const bodyParser = require("body-parser");
 const qrcode = require("qrcode-terminal");
+const crypto = require('crypto');
+
 
 const app = express();
 app.use(bodyParser.json());
