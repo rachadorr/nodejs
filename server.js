@@ -64,4 +64,4 @@ async function startWhatsApp() {
     }
 }
 
-//startWhatsApp();
+startWhatsApp();
