@@ -16,4 +16,7 @@
   "scripts": {
     "start": "node server.js"
   }
+   "engines": {
+    "node": "=22.14.0"
+  }
 }
