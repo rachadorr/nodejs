@@ -52,12 +52,16 @@ async function startWhatsApp() {
             const { number, message } = req.body;
             const formattedNumber = number.includes("@s.whatsapp.net") ? number : `${number}@s.whatsapp.net`;
 
-            try {
-                await sock.sendMessage(formattedNumber, { text: message });
-                res.json({ status: "success", message: "Mensagem enviada!" });
-            } catch (error) {
-                console.error("⚠️ Erro ao enviar mensagem:", error);
-                res.status(500).json({ status: "error", message: error.toString() });
+            for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                    await sock.sendMessage(formattedNumber, { text: message });
+                    return res.json({ status: "success", message: "Mensagem enviada!" });
+                } catch (error) {
+                    console.error(`⚠️ Erro ao enviar mensagem (tentativa ${attempt + 1}):`, error);
+                    if (attempt === 2) {
+                        return res.status(500).json({ status: "error", message: error.toString() });
+                    }
+                }
             }
         });
 
