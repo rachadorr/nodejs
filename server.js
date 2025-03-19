@@ -1,69 +1,139 @@
-const { default: makeWASocket, useMultiFileAuthState } = require("@whiskeysockets/baileys");
-const express = require("express");
-const bodyParser = require("body-parser");
-const qrcode = require("qrcode-terminal");
-//const crypto = require('crypto');
-
-
-const app = express();
-app.use(bodyParser.json());
-const port = process.env.PORT; // Usa a porta do Railway ou 3000;
-
-app.listen(port, () => console.log(`Servidor rodando na porta ${port}`));
-
-
-async function startWhatsApp() {
-    try {
-        console.log("🔄 Iniciando conexão com o WhatsApp...");
-        const { state, saveCreds } = await useMultiFileAuthState("auth_info_baileys");
-
-        const sock = makeWASocket({
-            auth: state,
-            printQRInTerminal: true,
-            browser: ["Ubuntu", "Chrome", "22.04.4"],
-            syncFullHistory: false,  // Evita possíveis erros de sincronização
-            markOnlineOnConnect: false,  // Reduz risco de bloqueio
-            fireInitQueries: true,  // Evita sobrecarga inicial
-            legacy: true,  // Ativa o modo legacy
-            defaultQueryTimeoutMs: 60000
-        });
-
-        sock.ev.on("creds.update", saveCreds);
-
-        sock.ev.on("connection.update", ({ qr, connection, lastDisconnect }) => {
-            if (qr) {
-                console.log("📸 Escaneie este QR Code para conectar:");
-                qrcode.generate(qr, { small: true });
-            }
-
-            if (connection === "open") {
+ const { default: makeWASocket, useMultiFileAuthState } = require("@whiskeysockets/baileys");
+ const express = require("express");
+ const bodyParser = require("body-parser");
+ const qrcode = require("qrcode-terminal");
+ 
+ const app = express();
+ app.use(bodyParser.json());
+ const port = 3000;
+ 
+ async function startWhatsApp() {
+     try {
+         console.log("🔄 Iniciando conexão com o WhatsApp...");
+         const { state, saveCreds } = await useMultiFileAuthState("auth_info_baileys");
+ 
+         const sock = makeWASocket({
+             auth: state,
+             printQRInTerminal: true,
+             browser: ["Ubuntu", "Chrome", "22.04.4"],
+             syncFullHistory: false,  // Evita possíveis erros de sincronização
+             markOnlineOnConnect: false,  // Reduz risco de bloqueio
+             fireInitQueries: true,  // Evita sobrecarga inicial
+             legacy: true,  // Ativa o modo legacy
+             defaultQueryTimeoutMs: 60000
+         });
+ 
+         sock.ev.on("creds.update", saveCreds);
+ 
+         sock.ev.on("connection.update", ({ qr, connection, lastDisconnect }) => {
+             if (qr) {
+                 console.log("📸 Escaneie este QR Code para conectar:");
+                 qrcode.generate(qr, { small: true });
+             }
+ 
+             if (connection === "open") {
                 console.log("✅ Conectado ao WhatsApp!");
             } else if (connection === "close") {
-                console.log("❌ Conexão fechada, tentando reconectar...");
-                startWhatsApp();  // Tenta reconectar automaticamente
-            }
+                const motivo = lastDisconnect?.error?.output?.statusCode;
+                console.log(`❌ Conexão fechada. Motivo: ${motivo || "desconhecido"}`);
 
-            if (lastDisconnect?.error) {
-                console.error("⚠️ Erro de desconexão:", lastDisconnect.error);
+                if (motivo === DisconnectReason.loggedOut) {
+                    console.log("🚪 Logout detectado. É necessário escanear o QR Code novamente.");
+                } else {
+                    console.log("🔄 Tentando reconectar em 15 segundos...");
+                    setTimeout(startWhatsApp, 15000);
+                }
             }
-        });
+ 
+             if (lastDisconnect?.error) {
+                 console.error("⚠️ Erro de desconexão:", lastDisconnect.error);
+             }
+         });
+ 
+         app.post("/send-message", async (req, res) => {
+             const { number, message } = req.body;
+             const formattedNumber = number.includes("@s.whatsapp.net") ? number : `${number}@s.whatsapp.net`;
+ 
+             try {
+                 await sock.sendMessage(formattedNumber, { text: message });
+                 res.json({ status: "success", message: "Mensagem enviada!" });
+             } catch (error) {
+                 console.error("⚠️ Erro ao enviar mensagem:", error);
+                 res.status(500).json({ status: "error", message: error.toString() });
+             }
+         });
 
-        app.post("/send-message", async (req, res) => {
-            const { number, message } = req.body;
-            const formattedNumber = number.includes("@s.whatsapp.net") ? number : `${number}@s.whatsapp.net`;
+         app.get("/groups", async (req, res) => {
 
             try {
-                await sock.sendMessage(formattedNumber, { text: message });
-                res.json({ status: "success", message: "Mensagem enviada!" });
+
+                if (!sock) {
+
+                    throw new Error("🚫 WhatsApp não está conectado.");
+
+                }
+
+
+
+                // Obtém a lista de grupos a partir dos contatos conhecidos
+
+                const contacts = sock?.ev?.bufferedContacts || [];
+
+                const groups = Object.values(contacts).filter(contact => contact.id.includes("@g.us"));
+
+
+
+                if (groups.length === 0) {
+
+                    return res.json({ status: "success", message: "Nenhum grupo encontrado." });
+
+                }
+
+
+
+                const groupList = await Promise.all(
+
+                    groups.map(async group => {
+
+                        const metadata = await sock.groupMetadata(group.id);
+
+                        return {
+
+                            id: metadata.id,
+
+                            name: metadata.subject,
+
+                            participants: metadata.participants.length
+
+                        };
+
+                    })
+
+                );
+
+
+
+                console.log("📂 Grupos encontrados:", groupList);
+
+                res.json({ status: "success", groups: groupList });
+
             } catch (error) {
-                console.error("⚠️ Erro ao enviar mensagem:", error);
-                res.status(500).json({ status: "error", message: error.toString() });
+
+                console.error("⚠️ Erro ao buscar grupos:", error);
+
+                res.status(500).json({ status: "error", message: error.message || error.toString() });
+
             }
+
         });
-
-    } catch (error) {
-        console.error("❌ Erro ao iniciar o WhatsApp:", error);
-    }
-}
-
-startWhatsApp();
+ 
+     } catch (error) {
+         console.error("❌ Erro ao iniciar o WhatsApp:", error);
+     }
+ }
+ 
+ startWhatsApp();
+ 
+ app.listen(port, () => {
+     console.log(`📡 Servidor rodando em http://localhost:${port}`);
+ });
