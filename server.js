@@ -19,7 +19,7 @@
              syncFullHistory: false,  // Evita possíveis erros de sincronização
              markOnlineOnConnect: false,  // Reduz risco de bloqueio
              fireInitQueries: true,  // Evita sobrecarga inicial
-             legacy: true,  // Ativa o modo legacy
+             //legacy: true,  // Ativa o modo legacy
              defaultQueryTimeoutMs: 60000
          });
  
@@ -40,8 +40,8 @@
                 if (motivo === DisconnectReason.loggedOut) {
                     console.log("🚪 Logout detectado. É necessário escanear o QR Code novamente.");
                 } else {
-                    console.log("🔄 Tentando reconectar em 15 segundos...");
-                    setTimeout(startWhatsApp, 15000);
+                    console.log("🔄 Tentando reconectar em 30 segundos...");
+                    setTimeout(startWhatsApp, 30000);
                 }
             }
  
