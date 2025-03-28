@@ -55,6 +55,7 @@
              const formattedNumber = number.includes("@s.whatsapp.net") ? number : `${number}@s.whatsapp.net`;
  
              try {
+                 console.log(message)
                  await sock.sendMessage(formattedNumber, { text: message });
                  res.json({ status: "success", message: "Mensagem enviada!" });
              } catch (error) {
@@ -63,7 +64,7 @@
              }
          });
 
-         app.get("/groups", async (req, res) => {
+         /*app.get("/groups", async (req, res) => {
 
             try {
 
@@ -125,7 +126,7 @@
 
             }
 
-        });
+        });*/
  
      } catch (error) {
          console.error("❌ Erro ao iniciar o WhatsApp:", error);
@@ -135,5 +136,5 @@
  startWhatsApp();
  
  app.listen(port, () => {
-     console.log(`📡 Servidor rodando em http://localhost:${port}`);
+     console.log(`📡 Servidor rodando na porta:${port}`);
  });
