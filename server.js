@@ -55,7 +55,6 @@
              const formattedNumber = number.includes("@s.whatsapp.net") ? number : `${number}@s.whatsapp.net`;
  
              try {
-                 console.log(message)
                  await sock.sendMessage(formattedNumber, { text: message });
                  res.json({ status: "success", message: "Mensagem enviada!" });
              } catch (error) {
