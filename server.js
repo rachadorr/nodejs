@@ -20,7 +20,7 @@
              syncFullHistory: false,  // Evita possíveis erros de sincronização
              markOnlineOnConnect: false,  // Reduz risco de bloqueio
              fireInitQueries: true,  // Evita sobrecarga inicial
-             //legacy: true,  // Ativa o modo legacy
+             legacy: true,  // Ativa o modo legacy
              defaultQueryTimeoutMs: 60000
          });
  
